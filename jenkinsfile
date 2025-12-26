@@ -61,7 +61,7 @@ pipeline {
 
                         sed -i "s|image:.*|image: modaknarayan/multibranch-flask-app:build-${BUILD_NUMBER}|" k8s/deployment.yaml
 
-                        git add k8s/deployment.yml
+                        git add k8s/deployment.yaml
                         git diff --cached --quiet || git commit -m "Updated image to ${IMAGE_TAG}"
                         git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/KastroVKiran/Multi-Branch-Prod.git main
                         """
