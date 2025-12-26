@@ -50,7 +50,7 @@ pipeline {
                 usernameVariable: 'GIT_USERNAME',
                 passwordVariable: 'GIT_TOKEN'
             )]) {
-                sh '''
+                sh """
                     set -e
 
                     git config user.name "modaknarayan97"
@@ -62,16 +62,20 @@ pipeline {
 
                     DEPLOY_FILE="k8s/deployment.yaml"
 
-                    sed -i "s|image:.*|image: modaknarayan/multibranch-flask-app:build-${BUILD_NUMBER}|" "$DEPLOY_FILE"
+                    sed -i "s|image:.*|image: modaknarayan/multibranch-flask-app:build-${BUILD_NUMBER}|" "\$DEPLOY_FILE"
 
-                    git add "$DEPLOY_FILE"
+                    git add "\$DEPLOY_FILE"
                     git diff --cached --quiet || git commit -m "Updated image to build-${BUILD_NUMBER}"
 
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/modaknarayan97/Multi-Branch-Prod.git
+                    export GIT_ASKPASS=/bin/echo
+                    export GIT_USERNAME=${GIT_USERNAME}
+                    export GIT_PASSWORD=${GIT_TOKEN}
+
                     git push origin main
-                '''
+                """
             }
         }
     }
 }
+
 
