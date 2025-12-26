@@ -23,6 +23,7 @@ pipeline {
             when { branch 'main' }
             steps {
                 script {
+                    env.IMAGE_NAME = "modaknarayan/multibranch-flask-app"
                     env.IMAGE_TAG = "build-${BUILD_NUMBER}"
 
                     withCredentials([usernamePassword(
