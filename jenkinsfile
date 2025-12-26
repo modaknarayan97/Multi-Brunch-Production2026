@@ -42,32 +42,36 @@ pipeline {
         }
 
         stage('Update K8s Manifest') {
-            when { branch 'main' }
-            steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'github-creds',
-                        usernameVariable: 'GIT_USERNAME',
-                        passwordVariable: 'GIT_TOKEN'
-                    )]) {
-                        sh """
-                        set -e
-                        git config user.name "$GIT_USER"
-                        git config user.email "$GIT_EMAIL"
+    when { branch 'main' }
+    steps {
+        script {
+            withCredentials([usernamePassword(
+                credentialsId: 'github-creds',
+                usernameVariable: 'GIT_USERNAME',
+                passwordVariable: 'GIT_TOKEN'
+            )]) {
+                sh '''
+                    set -e
 
-                        git fetch origin
-                        git checkout main
-                        git reset --hard origin/main
+                    git config user.name "modaknarayan97"
+                    git config user.email "modaknarayan97@gmail.com"
 
-                        sed -i "s|image:.*|image: modaknarayan/multibranch-flask-app:build-${BUILD_NUMBER}|" k8s/deployment.yaml
+                    git fetch origin
+                    git checkout main
+                    git reset --hard origin/main
 
-                        git add k8s/deployment.yaml
-                        git diff --cached --quiet || git commit -m "Updated image to ${IMAGE_TAG}"
-                        git push https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/KastroVKiran/Multi-Branch-Prod.git main
-                        """
-                    }
-                }
+                    DEPLOY_FILE="k8s/deployment.yaml"
+
+                    sed -i "s|image:.*|image: modaknarayan/multibranch-flask-app:build-${BUILD_NUMBER}|" "$DEPLOY_FILE"
+
+                    git add "$DEPLOY_FILE"
+                    git diff --cached --quiet || git commit -m "Updated image to build-${BUILD_NUMBER}"
+
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/KastroVKiran/Multi-Branch-Prod.git
+                    git push origin main
+                '''
             }
         }
     }
 }
+
