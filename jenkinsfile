@@ -67,7 +67,7 @@ pipeline {
                     git add "$DEPLOY_FILE"
                     git diff --cached --quiet || git commit -m "Updated image to build-${BUILD_NUMBER}"
 
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/KastroVKiran/Multi-Branch-Prod.git
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/modaknarayan97/Multi-Branch-Prod.git
                     git push origin main
                 '''
             }
