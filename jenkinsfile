@@ -1,76 +1,32 @@
-pipeline {
-    agent any
+stage('Update K8s Manifest') {
+    when { branch 'main' }
+    steps {
+        script {
+            withCredentials([usernamePassword(
+                credentialsId: 'github-creds',
+                usernameVariable: 'GIT_USERNAME',
+                passwordVariable: 'GIT_TOKEN'
+            )]) {
+                sh """
+                    set -e
 
-    options {
-        disableConcurrentBuilds()
-    }
+                    git config user.name "${GIT_USER}"
+                    git config user.email "${GIT_EMAIL}"
 
-    environment {
-        IMAGE_NAME = "modaknarayan/multibranch-flask-app"
-        GIT_USER   = "modaknarayan97"
-        GIT_EMAIL  = "modaknarayan97@gmail.com"
-    }
+                    git fetch origin
+                    git checkout main
+                    git reset --hard origin/main
 
-    stages {
+                    DEPLOY_FILE="k8s/deployment.yaml"
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+                    sed -i "s|image:.*|image: ${IMAGE_NAME}:build-${BUILD_NUMBER}|" "\$DEPLOY_FILE"
 
-        stage('Build and Push Image') {
-            when { branch 'main' }
-            steps {
-                script {
-                    env.IMAGE_TAG = "build-${BUILD_NUMBER}"
+                    git add "\$DEPLOY_FILE"
+                    git diff --cached --quiet || git commit -m "Updated image to build-${BUILD_NUMBER}"
 
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            set -e
-                            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                            echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
-                            docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                        """
-                    }
-                }
-            }
-        }
-
-        stage('Update K8s Manifest') {
-            when { branch 'main' }
-            steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'github-creds',
-                        usernameVariable: 'GIT_USERNAME',
-                        passwordVariable: 'GIT_TOKEN'
-                    )]) {
-                        sh """
-                            set -e
-
-                            git config user.name "${GIT_USER}"
-                            git config user.email "${GIT_EMAIL}"
-
-                            git fetch origin
-                            git checkout main
-                            git reset --hard origin/main
-
-                            DEPLOY_FILE="k8s/deployment.yaml"
-
-                            sed -i "s|image:.*|image: ${IMAGE_NAME}:build-${BUILD_NUMBER}|" "\$DEPLOY_FILE"
-
-                            git add "\$DEPLOY_FILE"
-                            git diff --cached --quiet || git commit -m "Updated image to build-${BUILD_NUMBER}"
-
-                            git push origin main
-                        """
-                    }
-                }
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/modaknarayan97/Multi-Brunch-Production2026.git
+                    git push origin main
+                """
             }
         }
     }
